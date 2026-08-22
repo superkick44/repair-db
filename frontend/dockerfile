@@ -1,0 +1,13 @@
+#Build Stage
+FROM node:20-alpine as build
+workdir /src
+copy package*.json ./
+run npm install 
+copy . .
+run npm run build
+
+# Server Stage
+from nginx:alpine
+copy --from=build /src/dist /usr/share/nginx/html
+expose 80
+cmd ["nginx", "-g", "daemon off;"]

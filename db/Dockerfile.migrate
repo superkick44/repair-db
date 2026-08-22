@@ -1,0 +1,19 @@
+# db/Dockerfile.migrate
+# Builds a small image whose only job is running Atlas migrations
+# against $DATABASE_URL. Runs as a one-off container in docker-compose,
+# ahead of the api service starting. Build context for this file is ./db.
+
+FROM arigaio/atlas:latest
+
+WORKDIR /workspace
+
+# Atlas config, desired-state schema files, and migration history
+COPY atlas.hcl .
+COPY schema ./schema
+COPY migrations ./migrations
+
+# Applies any pending migrations, then exits.
+# The base image has no shell, so `sh -c "... $VAR"` expansion doesn't work
+# here — instead, atlas.hcl's "local" env reads the target url directly via
+# getenv("DATABASE_URL"), so we just select that env and nothing else.
+ENTRYPOINT ["/atlas", "migrate", "apply", "--env", "local"]

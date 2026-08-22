@@ -1,5 +1,6 @@
 services:
   frontend:
+    container_name: "repair-db-ui"
     build:
       context: ./frontend
       dockerfile: dockerfile
@@ -9,8 +10,43 @@ services:
       - api
 
   api:
+    container_name: "repair-db-api"
     build:
       context: ./api
       dockerfile: dockerfile
     ports:
       - "8081:8080"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+
+  db:
+    container_name: "repair-db-data-base"
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: repairdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    build:
+      context: ./db
+      dockerfile: Dockerfile.migrate
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/repairdb?sslmode=disable
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  db-data:

@@ -5,3 +5,12 @@ services:
       dockerfile: dockerfile
     ports:
       - "8080:80"
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: ./api
+      dockerfile: dockerfile
+    ports:
+      - "8081:8080"

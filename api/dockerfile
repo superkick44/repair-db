@@ -1,0 +1,15 @@
+#Build
+from golang:1.27-alpine as build 
+workdir /src 
+copy go.mod go.sum ./ 
+run go mod download 
+copy . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o server .
+
+#run stage 
+from alpine:latest
+run apk --no-cache add ca-certificates
+workdir /src 
+copy --from=build /src/server .
+expose 8080
+cmd ["./server"]
